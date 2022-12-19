@@ -1118,9 +1118,27 @@ simples e elegantes.
 \subsection*{Problema 1}
 Funções auxiliares pedidas:
 \begin{code}
-loop = undefined
-initial = undefined
+
+-- fblH a b c ((ee, ed), d) = ed
+fblH a b c = p2 . p1
+
+-- fblG a b c ((ee, ed), d) = d
+fblG a b c = p2
+
+-- fblF a b c ((ee, ed), d) = a * d + b * ed + c * ee
+fblF _ _ _ ((_, _), 0) = 1
+fblF _ _ _ ((_, 0), 1) = 1
+fblF a b c ((ee, ed), d) = a * d + b * ed + c * ee
+
+
+fblHG a b c = split (fblH a b c) (fblG a b c)
+fblLoop a b c = split (fblHG a b c) (fblF a b c)
+
+
+loop a b c = fblLoop a b c
+initial = ((0, 0), 0)
 wrap = p2
+
 \end{code}
 
 \subsection*{Problema 2}
