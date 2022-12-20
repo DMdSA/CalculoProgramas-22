@@ -1167,7 +1167,8 @@ gene = ggene
 \end{code}
 Função de pós-processamento:
 \begin{code}
-post = undefined
+
+
 \end{code}
 
 \subsection*{Problema 3}
@@ -1198,32 +1199,12 @@ carpets_gene = ((draw32 . (const 0)) -|- split (draw32 . succ) id) . outNat
 
 carpets = reverse . (ana carpets_gene)
 
-
---ppresent (Left a) = do drawSq a ; await ; return a
---ppresent (Right (h,t)) = do drawSq h ; await ; return ((++) [h] ((do t)))
--- não está a juntar o que é preciso
-
--- versão recursiva sem catamorfismo
-pd [a] = do drawSq a
-pd (h:t) = do drawSq h ; await ; pd t
-
+ppresent (Left a) = do drawSq a ; await ; return []
+ppresent (Right (h,t)) = do drawSq h ; await ; do t
 
 present :: [[Square]] -> IO [()]
-present = undefined
+present = cata ppresent
 
-
-{-
-constructSierp5 = do drawSq (sierpinski (((0,0),32),0))
-                     await
-                     drawSq (sierpinski (((0,0),32),1))
-                     await
-                     drawSq (sierpinski (((0,0),32),2))
-                     await
-                     drawSq (sierpinski (((0,0),32),3))
-                     await
-                     drawSq (sierpinski (((0,0),32),4))
-                     await
--}
 
 \end{code}
 
