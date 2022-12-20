@@ -200,7 +200,7 @@ relativas ao sofware a instalar, etc.
 module Main where
 import Cp
 import List hiding (fac)
-import NEList (out)
+import NEList (out,inl,cata,ana)
 import Exp
 import Nat hiding (aux)
 import LTree
@@ -1144,7 +1144,26 @@ wrap = p2
 \subsection*{Problema 2}
 Gene de |tax|:
 \begin{code}
-gene = undefined
+
+
+-- versão do anamorfismo
+
+-- calculate the number of 'space' characters in the beginning of the string
+-- (basic code...)
+initialSpaces (h:t)
+  | h == ' ' = succ (initialSpaces t)
+  | otherwise = 0
+
+--- calculate the hierarchy level of current string
+expHierarchyLevel str = div n_spaces 4
+  where n_spaces = initialSpaces str
+
+-- after the out of a non-empty list, this is the gene
+ggene = (id -|- (id >< groupBy(\x y -> expHierarchyLevel x < expHierarchyLevel y))) . out
+
+-- requested definition:
+gene = ggene
+
 \end{code}
 Função de pós-processamento:
 \begin{code}
@@ -1153,17 +1172,59 @@ post = undefined
 
 \subsection*{Problema 3}
 \begin{code}
+
+
+divide_ ( ( ( (x, y), l), 0) ) = ( ( ( (x + (l/3), y + (l/3)), l/3), []) )
+divide_ ( ( ( (x, y), l), p) ) = ( ( ( (x + sndLvl, y + sndLvl), sndLvl), x1 ++ x2 ++ x3) )
+  where
+  sndLvl = (l / 3)
+  thdLvl = sndLvl * 2
+  newP = p-1
+  x1 = (((x, y+thdLvl), sndLvl), newP) : (((x+sndLvl, y+thdLvl), sndLvl), newP) : (((x+thdLvl, y+thdLvl), sndLvl), newP) : []
+  x2 = (((x, y+sndLvl), sndLvl), newP) : (((x + thdLvl, y + sndLvl), sndLvl), newP) : []
+  x3 = (((x, y), sndLvl), newP) : (((x + sndLvl, y), sndLvl), newP) : (((x + thdLvl, y), sndLvl), newP) : []
+
 squares = anaRose gsq
 
-gsq = undefined
+gsq = divide_
 
 rose2List = cataRose gr2l 
 
-gr2l = undefined
+gr2l = (cons . (id >< concat))
 
-carpets = undefined
 
+draw32 n = sierpinski (((0,0),32),n)
+carpets_gene = ((draw32 . (const 0)) -|- split (draw32 . succ) id) . outNat
+
+carpets = reverse . (ana carpets_gene)
+
+
+--ppresent (Left a) = do drawSq a ; await ; return a
+--ppresent (Right (h,t)) = do drawSq h ; await ; return ((++) [h] ((do t)))
+-- não está a juntar o que é preciso
+
+-- versão recursiva sem catamorfismo
+pd [a] = do drawSq a
+pd (h:t) = do drawSq h ; await ; pd t
+
+
+present :: [[Square]] -> IO [()]
 present = undefined
+
+
+{-
+constructSierp5 = do drawSq (sierpinski (((0,0),32),0))
+                     await
+                     drawSq (sierpinski (((0,0),32),1))
+                     await
+                     drawSq (sierpinski (((0,0),32),2))
+                     await
+                     drawSq (sierpinski (((0,0),32),3))
+                     await
+                     drawSq (sierpinski (((0,0),32),4))
+                     await
+-}
+
 \end{code}
 
 \subsection*{Problema 4}
