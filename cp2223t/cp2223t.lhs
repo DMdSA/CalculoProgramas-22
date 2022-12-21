@@ -1168,6 +1168,13 @@ gene = ggene
 Função de pós-processamento:
 \begin{code}
 
+post :: Exp String String -> [[String]]
+post (Var s) = [[s]]
+post (Term a []) = [[a]]
+post (Term s es) = [[s]] ++ map (s:) (concatMap post es)
+
+tudo :: [String] -> [[String]]
+tudo = post . tax
 
 \end{code}
 
@@ -1194,10 +1201,17 @@ rose2List = cataRose gr2l
 gr2l = (cons . (id >< concat))
 
 
+-- função auxiliar para usar pointfree
 draw32 n = sierpinski (((0,0),32),n)
-carpets_gene = ((draw32 . (const 0)) -|- split (draw32 . succ) id) . outNat
 
-carpets = reverse . (ana carpets_gene)
+-- versão com NELists
+--carpets_gene = ((draw32 . (const 0)) -|- split (draw32 . succ) id) . outNat
+--carpets = reverse . (ana carpets_gene)
+
+-- versão com Lists
+carpets_gene = (id -|- split draw32 id) . outNat
+carpets = reverse . (anaList carpets_gene)
+
 
 ppresent (Left a) = do drawSq a ; await ; return []
 ppresent (Right (h,t)) = do drawSq h ; await ; do t
