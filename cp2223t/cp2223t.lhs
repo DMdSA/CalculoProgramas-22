@@ -128,10 +128,11 @@
 %format e1 = "e_1 "	
 %format e2 = "e_2 "	
 \def\kcomp{\mathbin{\bullet}}
+
 %format (kcomp (f) (g)) = f "\kcomp " g
 %format .! = "\kcomp"
+\lstset{escapeinside={<@}{@>}}
 %---------------------------------------------------------------------------
-
 \title{
           \textbf{Cálculo de Programas}
 \\
@@ -1119,52 +1120,223 @@ simples e elegantes.
 Funções auxiliares pedidas:
 \begin{code}
 
--- fblH a b c ((ee, ed), d) = ed
-fblH a b c = p2 . p1
-
--- fblG a b c ((ee, ed), d) = d
-fblG a b c = p2
-
--- fblF a b c ((ee, ed), d) = a * d + b * ed + c * ee
-fblF _ _ _ ((_, _), 0) = 1
-fblF _ _ _ ((_, 0), 1) = 1
-fblF a b c ((ee, ed), d) = a * d + b * ed + c * ee
-
-
-fblHG a b c = split (fblH a b c) (fblG a b c)
-fblLoop a b c = split (fblHG a b c) (fblF a b c)
-
-
 loop a b c = fblLoop a b c
 initial = ((0, 0), 0)
 wrap = p2
 
 \end{code}
 
+\subsubsection{Primeira tentativa}
+
+Numa primeira abordagem a este problema, tentamos reduzir analiticamente 
+a função dada, f, de maneira a que o seu nível de operação passasse de (n+3) 
+para (n+1). Contudo, após algumas tentativas, não conseguimos deduzir as dependências 
+que se traduziam nas funções mútuamente recursivas. Apesar disso, conseguimos 
+perceber que há um pormenor que se manteve nesta tentativa de solução, o facto de haver 
+necessidade de construir esta nova função através de três funções, tal como já nos 
+sugeria a original ao ser constituída por três casos base, na sua definição (não é uma regra, mas 
+pode induzir para o resultado correto).\\
+
+\subsubsection{Segunda tentativa}
+
+Numa fase em que a solução não estava a ser muito fácil de calcular, tentamos seguir rumo pelo 
+desenho de diagramas e uma pré-configuração de como o sistema se deveria comportar.
+Para tal, configuramos o seguinte diagrama para nos auxiliar neste processo.
+
+\begin{eqnarray*}
+\xymatrix@@C=3cm{
+    |T| \ar[d]_{<<h,g>,f>} \ar@@/^/[r]^{out Nat_0} & |FT| \ar[d]^{F<<h,g>, f>} \ar@@/^/[l]^{in Nat_0} \\
+     (A\times B)\times C & F((A \times B) \times C) \ar[l]^{<<k,j>,i>}
+}
+\end{eqnarray*}
+
+Como estamos a operar sobre números naturais, N, sabemos como se comportam os in e out dos mesmos.
+
+\begin{lstlisting}
+in = [0, succ]
+out 0 = Left ()
+out (n+1) = Right n
+\end{lstlisting}
+
+Já que não conseguimos deduzir diretamente as funções necessárias, podemos atentar em como o sistema 
+se deverá comportar para, desde o início, chegar à solução, recursivamente. Ora, preparando um 
+esquema com dados relativos às respetivas soluções, chegamos ao seguinte:
+
+\begin{lstlisting}
+                   c=1  b=1  a=1
+N = 0    Left ()    ((_, _), 0)
+N = 1    Right 0    ((_, _), 1)
+N = 2    Right 1    ((_, _), 1)
+N = 3    Right 2    ((_, _), 2)
+N = 4    Right 3    ((_, _), 4)
+N = 5    Right 4    ((_, _), 7)
+N = 6    Right 5    ((_, _), 13)
+N = 7    Right 6    ((_, _), 24)
+
+                   c=3  b=2  a=1
+N = 0    Left ()    ((_, _), 0)
+N = 1    Right 0    ((_, _), 1)
+N = 2    Right 1    ((_, _), 1)
+N = 3    Right 2    ((_, _), 3)
+N = 4    Right 3    ((_, _), 8)
+N = 5    Right 4    ((_, _), 17)
+N = 6    Right 5    ((_, _), 42)
+N = 7    Right 6    ((_, _), 100)
+
+\end{lstlisting}
+
+A partir de um dado inteiro, conseguimos deduzir como as funções mutuamente recursivas se devem comportar.\\
+Ora, o resultado já nos é apresentado pelo enunciado do problema, sendo colocado no último elemento da 
+nossa configuração pela prestação definida da função \textbf{warp=p2}, cujo objetivo é retirar o resultado do problema.\\
+Os inteiros e a sua configuração do \textbf{out} servem meramente como guias para nos orientarmos no processo de recursividade.\\
+Passando para os primeiros três resultados, apesar dos diferentes fatores 'a', 'b' e 'c', percebemos que estes são 
+constantes, o que faz sentido de acordo com a definição original da função f.
+Assim, basta-nos encontrar relações entre os valores, com o auxílio desses fatores, que, a partir de um nível anterior, consigam 
+definir o resultado do nível seguinte.
+
+Após um curto período de experimentação, chegamos às seguintes relações:
+
+\begin{enumerate}
+
+  \item O primeiro elemento de um nível é o segundo do nível anterior.
+  \item O segundo elemento é o terceiro do nível anterior.
+  \item O terceiro elemento é o somatório de cada um dos elementos do nível anterior, multiplicado pelo seu fator.
+
+\end{enumerate}
+
+Seguindo as regras apresentadas acima, chegamos à seguinte configuração (para os espaços em falta, sugere-se a aplicação 
+das referidas regras, de maneira a perceber o processo intrínseco à configuração):
+
+\begin{lstlisting}
+                   c=1  b=1  a=1
+N = 0    Left ()    ((0, 0), 0)
+N = 1    Right 0    ((0, 0), 1)
+N = 2    Right 1    ((0, 1), 1)
+N = 3    Right 2    ((1, 1), 2)
+N = 4    Right 3    ((1, 2), 4)
+N = 5    Right 4    ((2, 4), 7)
+N = 6    Right 5    ((_, _), 13)
+N = 7    Right 6    ((_, _), 24)
+
+                   c=3  b=2  a=1
+N = 0    Left ()    ((_, _), 0)
+N = 1    Right 0    ((_, _), 1)
+N = 2    Right 1    ((_, _), 1)
+N = 3    Right 2    ((_, 1), 3)
+N = 4    Right 3    ((1, 3), 8)
+N = 5    Right 4    ((3, 8), 17)
+N = 6    Right 5    ((8, 17), 42)
+N = 7    Right 6    ((17, 42), 100)
+
+\end{lstlisting}
+
+Traduzindo as relações identificadas, chegamos à seguinte configuração:
+
+\begin{code}
+
+-- initial = ((0, 0), 0)\\
+
+-- fblH a b c ((ee, ed), d) = ed
+fblH a b c = p2 . p1
+
+-- \\
+-- fblG a b c ((ee, ed), d) = d
+fblG a b c = p2
+
+-- \\
+-- fblF a b c ((ee, ed), d) = a * d + b * ed + c * ee
+fblF _ _ _ ((_, _), 0) = 1
+fblF _ _ _ ((_, 0), 1) = 1
+fblF a b c ((ee, ed), d) = a * d + b * ed + c * ee
+
+-- \\
+-- \textless h, g \textgreater = \textless fblH, fblG \textgreater
+fblHG a b c = split (fblH a b c) (fblG a b c)
+
+-- \\
+-- \textless \textless h, g \textgreater , f \textgreater = \textless fblHG, fblF \textgreater
+fblLoop a b c = split (fblHG a b c) (fblF a b c)
+\end{code}
+
+
+%% @todo - testes performance
+
+
 \subsection*{Problema 2}
 Gene de |tax|:
 \begin{code}
 
+gene = ggene
 
--- versão do anamorfismo
+\end{code}
 
--- calculate the number of 'space' characters in the beginning of the string
--- (basic code...)
+\subsubsection{Primeiro passo: hierarquias}
+
+O problema é-nos apresentado, desde logo, como contendo um tipo de hierarquia entre os seus elementos, 
+sendo os mesmos \textit{strings}. A hierarquia é definida pelo número de espaços em braco que contém no 
+seu início, até alcançar um caracter diferente. A cada quatro espaços brancos, incrementa-se um nível.
+
+\begin{lstlisting}
+    #espacos    #hierarquia    
+        0            0
+        4            1
+        8            2
+      (...)        (...)
+\end{lstlisting}
+
+A partir daqui, podemos, desde já, definir as funções que arrecadarão com o trabalho de retirar o nível de 
+hierarquia de cada uma das \textit{strings}.
+
+\begin{code}
+-- calculate the number of 'space' characters in the beginning of the string\\
 initialSpaces (h:t)
   | h == ' ' = succ (initialSpaces t)
   | otherwise = 0
 
---- calculate the hierarchy level of current string
+
+-- calculate the hierarchy level of current string\\
 expHierarchyLevel str = div n_spaces 4
   where n_spaces = initialSpaces str
-
--- after the out of a non-empty list, this is the gene
-ggene = (id -|- (id >< groupBy(\x y -> expHierarchyLevel x < expHierarchyLevel y))) . out
-
--- requested definition:
-gene = ggene
-
 \end{code}
+
+\subsubsection{Segundo passo: gene do anamorfismo}
+
+O diagrama apresentado no enunciado já nos mostra como parte do gene deste anamorfismo se comporta.
+Ao utilizar o out de listas não vazias, ou temos um único elemento, ou a cabeça da lista e a cauda da mesma, como na 
+configuração do out aplicado a listas normais.
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    S^* \ar[r]^{out} & \textcolor{orange}{S + S} \times \textcolor{blue}{S^*} \ar[r]^{...} & \textcolor{orange}{S + S} \times \textcolor{blue}{(S^*)^*}
+}
+\end{eqnarray*}
+
+A partir da linha acima exposta, percebemos que, quando aplicado, o nosso gene tem de preparar os valores 
+que recebe com o formato correto para que o bifuntor de base opere na recursividade. Assim, a partir de 
+(\textit{S + S}) temos de transformar no tipo (\textit{S + S}), enquanto no lado de \textit{S*} precisamos transformar 
+esta lista numa lista de listas, \textit{(S*)*}.\\
+
+Tratando-se de uma disjunção, o nosso gene será obrigatoriamente do tipo (algo + algo).\\
+Sendo uma execução em paralelo, do lado direito, o gene será, por sua vez, do tipo (algo + (algo \times algo)).\\
+
+Caso tenhamos um único elemento, o construtor de \textit{Exp Tree} consegue lidar com ele, há apenas necessidade 
+de o preservar (identidade). O mesmo acontece para a cabeça de uma lista. Esta será um nodo pai na consequente árvore, 
+restando apenas definir os seus filhos (identidade).\\
+Ora, a partir disto, conseguimos definir algo como sendo do tipo (id + (id \times algo)).\\
+
+Como o objetivo é pegar numa lista e transformá-la numa lista de listas, temos já uma dica de que é necessário agrupar 
+valores. A questão é: Como? Com que restrições/fatores? Ora, temos a indicação de que temos de seguir uma determinada 
+hierarquia e o cálculo da mesma já está preparado (primeiro passo). Assim, apenas precisamos de encontrar uma função que 
+agrupe elementos tendo em conta uma determinada relação entre eles, algo que já existe: \textit{groupBy}.\\
+
+Desta maneira, agrupamos elementos de uma lista cujo nível hierárquico esteja em ordem crescente de valores!
+
+\begin{code}
+-- after the out of a non-empty list, this is the gene\\
+ggene = (id -|- (id >< groupBy(\ x y -> expHierarchyLevel x < expHierarchyLevel y))) . out
+\end{code}
+
+
 Função de pós-processamento:
 \begin{code}
 
@@ -1173,15 +1345,57 @@ post (Var s) = [[s]]
 post (Term a []) = [[a]]
 post (Term s es) = [[s]] ++ map (s:) (concatMap post es)
 
-tudo :: [String] -> [[String]]
-tudo = post . tax
-
 \end{code}
 
 \subsection*{Problema 3}
 \begin{code}
+squares = anaRose gsq
+gsq = divide_
+rose2List = cataRose gr2l 
+gr2l = (cons . (id >< concat))
+carpets = reverse . (anaList carpets_gene)
 
+present :: [[Square]] -> IO [()]
+present = cata ppresent
+\end{code}
 
+\subsubsection{Primeiro passo - anamorfismo de Rose Tree}
+
+Um hilomorfismo é constituído por um catamorfismo após um anamorfismo. Nesta sequência, precisamos preliminarmente de 
+definir o anamorfismo que construirá uma \textit{Rose tree} a partir do \textit{input} que a função 
+\textit{squares} recebe: \textit{(Square, Int)}.\\
+
+Ora, traduzindo o tipo de entrada para um tipo mais genérico, podemos ter o seguinte:\\
+
+  \textcolor{blue}{Square} = ((x, y), side) = ((A \times B) \times C)\\
+  (Square, \textcolor{orange}{Int}) = \textcolor{blue}{((A \times B) \times C)} \textcolor{orange} { \times P }
+\\
+
+Sobre \textit{rose trees} sabemos ainda que:
+
+\begin{eqnarray*}
+\xymatrix@@C=3cm{
+    Rose\ A \ar@@/^1pc/[r]^{out} & A \times (Rose\ A)^* \ar@@/^1pc/[l]^{in}
+}
+\end{eqnarray*}
+
+Assim, podemos preparar já o diagrama que define o anamorfismo a construir.
+
+\begin{eqnarray*}
+\xymatrix@@C=3cm{
+    (((A \times B) \times C) \times P) \ar[d]^{[(divide)]} \ar[r]^{divide} & ((A \times B) \times C) \times (((A \times B) \times C) \times P) \ar[d]^{B(id, 
+\ [(divide)])}\\
+    Rose ((A \times B) \times C) \ar@@/^1pc/[r]^{out} & ((A \times B) \times C) \times Rose ((A \times B) \times C)^* \ar@@/^1pc/[l]^{in}
+}
+\end{eqnarray*}
+
+Com o diagrama feito, basta preparar os pontos. Para cada ponto de referência, temos de calcular os oito pontos 
+relativos. Tivemos cuidado para ordenar esses pontos consoante a ordem relativa esquerda-direita, baixo-cima para produzir 
+o efeito da ordem utilizada nas figuras fornecidas no enunciado do problema.\\
+Calculados os pontos, o anamorfismo faz todo o trabalho restante por nós, pegando nos pontos que criamos e transformando-os 
+na respetiva \textit{rose tree}.
+
+\begin{code}
 divide_ ( ( ( (x, y), l), 0) ) = ( ( ( (x + (l/3), y + (l/3)), l/3), []) )
 divide_ ( ( ( (x, y), l), p) ) = ( ( ( (x + sndLvl, y + sndLvl), sndLvl), x1 ++ x2 ++ x3) )
   where
@@ -1191,51 +1405,143 @@ divide_ ( ( ( (x, y), l), p) ) = ( ( ( (x + sndLvl, y + sndLvl), sndLvl), x1 ++ 
   x1 = (((x, y+thdLvl), sndLvl), newP) : (((x+sndLvl, y+thdLvl), sndLvl), newP) : (((x+thdLvl, y+thdLvl), sndLvl), newP) : []
   x2 = (((x, y+sndLvl), sndLvl), newP) : (((x + thdLvl, y + sndLvl), sndLvl), newP) : []
   x3 = (((x, y), sndLvl), newP) : (((x + sndLvl, y), sndLvl), newP) : (((x + thdLvl, y), sndLvl), newP) : []
+\end{code}
 
-squares = anaRose gsq
+\subsubsection{Segundo passo - catamorfismo}
 
-gsq = divide_
+O trabalho do catamorfismo \textit{rose2List} é, como o nome indica, transformar uma \textit{Rose tree} numa lista, 
+contendo esta os quadrados a desenhar que se encontravam na árvore.\\
 
-rose2List = cataRose gr2l 
+Partindo, novamente, de um diagrama, temos:
 
-gr2l = (cons . (id >< concat))
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    Rose ((A \times B) \times C) \ar[d]_{(||gr2l||)} \ar@@/^1pc/[r]^{outRose} & ((A \times B) \times C) \times (Rose (A \times B) \times C)^* \ar[d]^{id + (||gr2l||)} \ar@@/^1pc/[l]^{inRose}\\
+    ((A \times B) \times C)^* & ((A \times B) \times C) \times Rose ((A \times B) \times C)^* \ar@@/2pc/[l]^{g=[\_, \_]}
+}
+\end{eqnarray*}
+
+Para formar uma lista a partir de uma cabeça e o resto do seu corpo, basta utilizarmos a função \textit{cons}.
+Contudo, como temos listas de listas, temos de reduzir a complexidade desse tipo para apenas uma lista, logo:
+
+\begin{lstlisting}
+  g = cons . (id x concat)
+\end{lstlisting}
+
+Aqui, temos a construção de uma lista após preservar a sua cabeça e reduzir a complexidade da sua cauda.
 
 
--- função auxiliar para usar pointfree
+\subsubsection{Terceiro Passo - anamorfismo \textit{carpets}}
+
+Mais uma vez, é-nos pedida a construção de um hilomorfismo (catamorfismo após anamorfismo), desta vez para automatizar o precesso 
+de construção dos gráficos com os quadrados de \textit{Sierpisnki}.\\
+Ora, o anamorfismo \textit{carpets} recebe um inteiro e produz uma lista com listas de quadrados que definem cada um dos níveis de 
+profundidade do tapete. Assim, conseguimos reproduzir o seguinte diagrama:
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    N \ar[r]^{outNat} \ar[d]_{[(carpets)]} & 1 + N \ar@@/-3pc/[r]^{id + <N,N>} & 1 + ((A \times B) \times C)^* \times ((A \times B) \times C)^* \ar[d]^{id+id\times[(carpets)]}\\
+(((A \times B) \times C)^*)^* && 1 + ((A \times B) \times C)^* \times (((A \times B) \times C)^*)^* \ar@@/5pc/[ll]_{inList}
+}
+\end{eqnarray*}
+
+Queremos, portanto, a partir de um número, criar recursivamente as listas que irão definir os \textit{squares} de cada nível de 
+profundidade do carpete. Como já temos uma função que faz esse trabalho, \textit{Sierpinski}, basta atribuir-lhe um valor arbitrário:
+
+\begin{code}
+-- then, we can use it as pointfree\\
 draw32 n = sierpinski (((0,0),32),n)
-
--- versão com NELists
---carpets_gene = ((draw32 . (const 0)) -|- split (draw32 . succ) id) . outNat
---carpets = reverse . (ana carpets_gene)
-
--- versão com Lists
 carpets_gene = (id -|- split draw32 id) . outNat
-carpets = reverse . (anaList carpets_gene)
+\end{code}
+
+Aqui, não fazemos nada no nível de profundidade zero (preservar com identidade). Contudo, a partir de um inteiro natural processamos 
+a respetiva lista de \textit{squares} associado a esse nível e preservamos o mesmo valor para a próxima iteração da recursividade o voltar 
+a processar. No fim, o construtor de listas será capaz de transformar este trabalho numa única lista com os tapetes de cada nível de 
+profundidade.\\
+
+\subsubsection{Quarto passo - catamorfismo \textit{present}}
+
+O catamorfimos final deve processar a lista de tapetes criada anteriormente e, percorrendo cada tapete, deve desenhá-lo, respeitando um 
+intervalo de um segundo entre cada gráfico gerado.\\
+Assumindo que nunca vamos ter uma lista sem pontos (i.e., usamos um catamorfismo de listas não vazias), o gene deste catamorfismo tem de ser capaz de lidar com dois casos: quando a lista tem 
+um único tapete, ou quando tem um tapete à cabeça de uma lista e os restantes tapetes na cauda da mesma. Tratando-se de uma disjunção, 
+definimos dois casos para um gene \textit{ppresent} que se limita a utilizar a função fornecida para desenho de carpetes:
 
 
+\begin{code}
 ppresent (Left a) = do drawSq a ; await ; return []
 ppresent (Right (h,t)) = do drawSq h ; await ; do t
-
-present :: [[Square]] -> IO [()]
-present = cata ppresent
-
-
 \end{code}
 
 \subsection*{Problema 4}
 \subsubsection*{Versão não probabilística}
 Gene de |consolidate'|:
+
 \begin{code}
-cgene = undefined
+
+pairConsolidate (a,b) [] = [(a,b)]
+pairConsolidate (a,b) ((h1,h2):t)
+  | a == h1 = ((h1,h2+b):t)
+  | otherwise = (h1,h2) : pairConsolidate (a,b) t 
+
+
+pairConsolidate2 ((a,b), []) = [(a,b)]
+pairConsolidate2 ((a,b), ((h1,h2):t) )
+ | a == h1 = (h1, h2+b) : t
+ | otherwise = (h1,h2) : pairConsolidate2 ((a,b) , t)
+
+
+--cgene1 = nil
+--cgene2 :: (Eq a, Num b) => ((a, b), [(a, b)]) -> [(a, b)]
+--cgene2 = pairConsolidate2
+
+cgene :: (Eq a, Num b) => Either c ((a, b), [(a, b)]) -> [(a, b)]
+cgene = either nil pairConsolidate2
+
+
 \end{code}
+
 Geração dos jogos da fase de grupos:
 \begin{code}
-pairup = undefined
 
-matchResult = undefined
+
+
+pairupEsq (team, []) = []
+pairupEsq (team, h:[]) = [(team, h)]
+pairupEsq (team, h:t) = (team, h) : pairupEsq (team, t)
+
+pairupGene = (id -|- split pairupEsq p2) . outList
+
+pairup = concat . anaList pairupGene
+
+
+
+matchResult :: (Match -> Maybe Team) -> Match -> [(Team, Int)]
+matchResult criteria (m1,m2) = [(m1, r1), (m2, r2)] where
+  winner = criteria (m1,m2)
+  r1 = if winner == Nothing then 0 else if winner == Just m1 then 3 else 1
+  r2 = if r1 == 0 then 0 else if r1 == 3 then 1 else 3 
+
+
+--arrangement = (>>= swapTeams) . chunksOf 4 where
+--  swapTeams [[a1,a2],[b1,b2],[c1,c2],[d1,d2]] = [a1,b2,c1,d2,b1,a2,d1,c2]
 
 glt = undefined
+
+
+gltg (a, [b]) = (Leaf a, Leaf b)
+gltg (a, b:c:d:e) = (Fork (Leaf a, Leaf b), Fork (Leaf c, Leaf d))
+
+gltgene = (id -|- split (Fork . (Leaf >< Leaf . head)) (tail . p2)) . outList
+
+l2LT :: [a] -> LTree a
+l2LT = undefined
+
+b = simulateGroupStage (genGroupStageMatches groups)
+a = arrangement b
+
 \end{code}
+
 \subsubsection*{Versão probabilística}
 \begin{code}
 pinitKnockoutStage = undefined
