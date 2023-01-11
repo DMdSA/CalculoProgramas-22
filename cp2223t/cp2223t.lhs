@@ -160,15 +160,12 @@
 
 \begin{center}\large
 \begin{tabular}{ll}
-Grupo nr. & 99 (preencher)
+Grupo nr. & 21
 \\\hline
-a11111 & Nome1 (preencher)
+a85508 & Marco António Sampaio
 \\
-a22222 & Nome2 (preencher)
-\\
-a33333 & Nome3 (preencher)
-\\
-a44444 & Nome4 (preencher, se aplicável)
+a93313 & Diogo Miguel Araújo
+
 \end{tabular}
 \end{center}
 
@@ -1145,7 +1142,7 @@ Para tal, configuramos o seguinte diagrama para nos auxiliar neste processo.
 
 \begin{eqnarray*}
 \xymatrix@@C=3cm{
-    |T| \ar[d]_{<<h,g>,f>} \ar@@/^/[r]^{out Nat_0} & |FT| \ar[d]^{F<<h,g>, f>} \ar@@/^/[l]^{in Nat_0} \\
+    N \ar[d]_{<<h,g>,f>} \ar@@/^/[r]^{out Nat_0} & 1 + N \ar[d]^{F<<h,g>, f>} \ar@@/^/[l]^{in Nat_0} \\
      (A\times B)\times C & F((A \times B) \times C) \ar[l]^{<<k,j>,i>}
 }
 \end{eqnarray*}
@@ -1259,7 +1256,57 @@ fblLoop a b c = split (fblHG a b c) (fblF a b c)
 \end{code}
 
 
-%% @todo - testes performance
+De maneira a justificar a necessidade de evoluir certos algoritmos para a sua versão em recursividade mútua, fizemos alguns testes com ambas 
+as versões desta função, f e fbl. Para recolher as métricas utilizamos o comando ":set +s" para ativar as estatísticas de tempo e espaço, das quais 
+conseguimos retirar informações como o tempo gasto pelo CPU e o número de \textit{bytes} da memória necessários para executar os cálculos necessários.
+Na primeira tabela, as reticências devem-se a um tempo de espera tão demorado que não conseguimos obter os resultados. Na segunda, o único valor com o 
+mesmo formato deve-se a ser um número tão grande que não se encaixa no formato da tabela.\\
+
+\begin{center}
+\begin{tabular}{||c c c c c c c c||} 
+ \hline
+ Function & a & b & c & n & CPU Time (secs) & \#Bytes of memory & Answer \\ [0.5ex] 
+ \hline\hline
+ f & 1 & 2 & 3 & 5 & 0,00 & 63,840 & 17 \\ 
+ \hline
+ f & 1 & 2 & 3 & 10 & 0,01 & 214,504 & 1331 \\
+ \hline
+ f & 1 & 2 & 3 & 15 & 0,02 & 3,356,080 & 100425 \\
+ \hline
+ f & 1 & 2 & 3 & 20 & 0,27 & 69,456,856 & 7579198\\
+ \hline
+ f & 1 & 2 & 3 & 25 & 5,91 & 1,460,849,568 & 572024206 \\ 
+ \hline
+ f & 1 & 2 & 3 & 30 & 132.30 & 30,749,309,288 & 43172337417 \\ 
+ \hline
+  f & 1 & 2 & 3 & 35 & ... & ... & ... \\ 
+ \hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{||c c c c c c c c||} 
+ \hline
+ Function & a & b & c & n & CPU Time (secs) & \#Bytes of memory & Answer \\ [0.5ex] 
+ \hline\hline
+ fbl & 1 & 2 & 3 & 5 & 0,00 & 66,496 & 17 \\ 
+ \hline
+ fbl & 1 & 2 & 3 & 10 & 0,00 & 76,632 & 1331 \\
+ \hline
+ fbl & 1 & 2 & 3 & 15 & 0,00 & 86,768 & 100425 \\
+ \hline
+ fbl & 1 & 2 & 3 & 20 & 0,01 & 96,216 & 7579198\\
+ \hline
+ fbl & 1 & 2 & 3 & 25 & 0,01 & 106,352 & 572024206 \\ 
+ \hline
+ fbl & 1 & 2 & 3 & 30 & 0,01 & 116,488 & 43172337417 \\ 
+ \hline
+ fbl & 1 & 2 & 3 & 100 & 0,01 & 266,768 & 8,4E+36 \\ 
+ \hline
+ fbl & 1 & 2 & 3 & 1000 & 0,03 &  2,721,432 & ... \\ 
+ \hline
+\end{tabular}
+\end{center}
 
 
 \subsection*{Problema 2}
