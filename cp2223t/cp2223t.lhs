@@ -131,7 +131,6 @@
 
 %format (kcomp (f) (g)) = f "\kcomp " g
 %format .! = "\kcomp"
-\lstset{escapeinside={<@}{@>}}
 %---------------------------------------------------------------------------
 \title{
           \textbf{Cálculo de Programas}
@@ -1526,41 +1525,31 @@ Gene de |consolidate'|:
 
 \begin{code}
 
-pairConsolidate (a,b) [] = [(a,b)]
-pairConsolidate (a,b) ((h1,h2):t)
-  | a == h1 = ((h1,h2+b):t)
-  | otherwise = (h1,h2) : pairConsolidate (a,b) t 
+cgene :: (Eq a, Num b) => Either c ((a, b), [(a, b)]) -> [(a, b)]
+cgene = either nil pairConsolidate2
 
-
-pairConsolidate2 ((a,b), []) = [(a,b)]
+pairConsolidate2 (a, []) = singl a
 pairConsolidate2 ((a,b), ((h1,h2):t) )
  | a == h1 = (h1, h2+b) : t
  | otherwise = (h1,h2) : pairConsolidate2 ((a,b) , t)
 
-
---cgene1 = nil
---cgene2 :: (Eq a, Num b) => ((a, b), [(a, b)]) -> [(a, b)]
---cgene2 = pairConsolidate2
-
-cgene :: (Eq a, Num b) => Either c ((a, b), [(a, b)]) -> [(a, b)]
-cgene = either nil pairConsolidate2
-
-
 \end{code}
+
+Para calcular o gene para o catamorfismo de listas pedido, consolidate', limitamo-nos a construir uma função que fosse 
+capaz de lidar com o tipo gerado pelo \textit{out} das listas. Assim, como caso de paragem assumimos ter um único elemento do lado 
+esquerdo e vazio no direito e, nos restantes, vamos percorrendo a lista do lado direito até encontrar valores cujas condições se apliquem 
+ao caso de utilização do \textit{consolidate}.
+
 
 Geração dos jogos da fase de grupos:
 \begin{code}
 
-
+pairup = concat . anaList pairupGene
+pairupGene = (id -|- split pairupEsq p2) . outList
 
 pairupEsq (team, []) = []
 pairupEsq (team, h:[]) = [(team, h)]
 pairupEsq (team, h:t) = (team, h) : pairupEsq (team, t)
-
-pairupGene = (id -|- split pairupEsq p2) . outList
-
-pairup = concat . anaList pairupGene
-
 
 
 matchResult :: (Match -> Maybe Team) -> Match -> [(Team, Int)]
@@ -1569,25 +1558,23 @@ matchResult criteria (m1,m2) = [(m1, r1), (m2, r2)] where
   r1 = if winner == Nothing then 0 else if winner == Just m1 then 3 else 1
   r2 = if r1 == 0 then 0 else if r1 == 3 then 1 else 3 
 
-
---arrangement = (>>= swapTeams) . chunksOf 4 where
---  swapTeams [[a1,a2],[b1,b2],[c1,c2],[d1,d2]] = [a1,b2,c1,d2,b1,a2,d1,c2]
-
-glt = undefined
-
-
-gltg (a, [b]) = (Leaf a, Leaf b)
-gltg (a, b:c:d:e) = (Fork (Leaf a, Leaf b), Fork (Leaf c, Leaf d))
-
-gltgene = (id -|- split (Fork . (Leaf >< Leaf . head)) (tail . p2)) . outList
-
-l2LT :: [a] -> LTree a
-l2LT = undefined
-
-b = simulateGroupStage (genGroupStageMatches groups)
-a = arrangement b
+glt = (id -|- (singl >< id)) . out
 
 \end{code}
+
+Para definir \textit{pairup}, consideramos que este é um anamorfismo que pega 
+numa lista de equipas e a transforma numa lista de pares contendo todos os \textit{matches} 
+possíveis dentro de um determinado grupo. Como o resultado obtido é uma lista com listas, 
+aplicas o \textit{concat} para as reduzir a uma única lista, como pretendido.
+
+\begin{eqnarray*}
+\xymatrix@@C=3cm{
+    T^* \ar[r]^{outList} \ar[d]_{f} & 1 + T \times T^* \ar@@/-1pc/[r]^{id + <pairupEsq, \pi2>} & 1 + (T \times T)^* \times (T)^* 
+ \ar[d]^{id + id \times f^*}\\
+((T \times T)^*)^* && 1 + (T \times T)^* \times (T \times T)^* \ar@@/5pc/[ll]_{inList}
+}
+\end{eqnarray*}
+
 
 \subsubsection*{Versão probabilística}
 \begin{code}
